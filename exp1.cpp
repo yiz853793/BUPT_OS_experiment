@@ -9,10 +9,10 @@
 void child_process_logic() {
     printf("Child process started with PID: %d\n", getpid());
 
-    usleep(200000);  // 200ms delay
+    // usleep(200000);  // 200ms delay
     
     printf("Child process finished its task.\n");
-    exit(0);  
+    execl("/bin/ls", "ls", NULL); 
 }
 
 void parent_process_logic(pid_t child_pid) {
@@ -41,6 +41,7 @@ int main() {
     if (pid == 0) {
         child_process_logic();
     } else {
+        wait(NULL);
         parent_process_logic(pid);
     }
 

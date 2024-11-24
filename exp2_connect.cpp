@@ -2,57 +2,49 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
-// 共享数据
-int shared_data = 0;
-pthread_mutex_t lock;
-
-void *thread_func1(void *arg) {
-    sleep(rand() % 2);
-    pthread_mutex_lock(&lock);
-    shared_data += 10;
-    printf("Thread 1 updated shared data: %d\n", shared_data);
-    pthread_mutex_unlock(&lock);
-    return NULL;
+void* asynStrlen(void* str){
+    int64_t len = strlen((char*)str);
+    pthread_exit((void*)len);
+}
+void* negative(void* a){
+    int64_t t = *(int*)a;
+    t = -t;
+    pthread_exit((void*)t);
 }
 
-// 子线程2
-void *thread_func2(void *arg) {
-    sleep(rand() % 2);
-    pthread_mutex_lock(&lock);
-    shared_data += 20;
-    printf("Thread 2 updated shared data: %d\n", shared_data);
-    pthread_mutex_unlock(&lock);
-    return NULL;
+typedef struct addPara
+{
+    int a, b;
+} addPara;
+
+void *add(void* t){
+    addPara* m = (addPara*)t;
+    int64_t ans = m->a + m->b;
+    pthread_exit((void*)ans);
 }
 
-void *parent_thread_func(void *arg) {
-    sleep(1);
-    pthread_mutex_lock(&lock);
-    printf("Parent thread reading shared data: %d\n", shared_data);
-    pthread_mutex_unlock(&lock);
-    return NULL;
-}
+int main(){
+    char h[] = "hello";
+    int a = 10, b = 20;
+    void *h_len, *a_neg, *sum;
+    pthread_t threadStrlen, threadNeg, threadAdd;
 
-int main() {
-    pthread_t threads[3];
-    srand(time(NULL));  
+    addPara t;
+    t.a = a;
+    t.b = b;
+    pthread_create(&threadStrlen, NULL, asynStrlen, h);
+    pthread_create(&threadNeg, NULL, negative, &a);
+    pthread_create(&threadAdd, NULL, add, &t);
 
-    if (pthread_mutex_init(&lock, NULL) != 0) {
-        perror("Mutex init failed");
-        exit(1);
-    }
+    pthread_join(threadStrlen, &h_len);
+    pthread_join(threadNeg, &a_neg);
+    pthread_join(threadAdd, &sum);
 
-    pthread_create(&threads[0], NULL, thread_func1, NULL);
-    pthread_create(&threads[1], NULL, thread_func2, NULL);
-
-    pthread_create(&threads[2], NULL, parent_thread_func, NULL);
-
-    for (int i = 0; i < 3; i++) {
-        pthread_join(threads[i], NULL);
-    }
-
-    pthread_mutex_destroy(&lock);
-
+    printf("Length of h is %ld\n", (int64_t)h_len);
+    printf("negative of a is %d\n", (int)(int64_t)a_neg);
+    printf("sum of a and b is %d\n", (int)(int64_t)sum);
+    
     return 0;
 }
