@@ -42,6 +42,7 @@ int main() {
     if (pid == 0) {
         child_process_logic();
     } else {
+        wait(NULL);
         parent_process_logic(pid);
     }
 
