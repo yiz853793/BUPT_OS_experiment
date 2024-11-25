@@ -5,14 +5,14 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-
+#include <time.h>
 void child_process_logic() {
     printf("Child process started with PID: %d\n", getpid());
 
-    usleep(200000);  // 200ms delay
+    sleep(rand() % 3 + 1);  // delay random time
     
     printf("Child process finished its task.\n");
-    exit(0);  
+    execl("/bin/ls", "ls", NULL); 
 }
 
 void parent_process_logic(pid_t child_pid) {
@@ -31,6 +31,7 @@ void parent_process_logic(pid_t child_pid) {
 }
 
 int main() {
+    srand(time(NULL));
     pid_t pid = fork();
 
     if (pid == -1) {

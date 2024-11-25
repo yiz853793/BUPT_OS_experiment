@@ -4,38 +4,35 @@
 #include <unistd.h>
 #include <time.h>
 
-// 共享数据
 int shared_data = 0;
 pthread_mutex_t lock;
-
-// 子线程1执行的任务
+bool thread_3finish = false;
 void *thread_func1(void *arg) {
-    sleep(rand() % 2);
+    sleep(rand() % 10);
     pthread_mutex_lock(&lock);
     shared_data += 10;
-    printf("Thread 1: Shared data = %d\n", shared_data);
+    printf("Thread %ld: Shared data = %d\n",pthread_self(), shared_data);
     pthread_mutex_unlock(&lock);
     return NULL;
 }
 
-// 子线程2执行的任务
 void *thread_func2(void *arg) {
-    sleep(rand() % 2);
+    sleep(rand() % 10);
     pthread_mutex_lock(&lock);
     shared_data += 20;
-    printf("Thread 2: Shared data = %d\n", shared_data);
+    printf("Thread %ld: Shared data = %d\n",pthread_self(), shared_data);
     pthread_mutex_unlock(&lock);
-    return NULL;
+    pthread_exit(NULL);
 }
 
-// 子线程3执行的任务
 void *thread_func3(void *arg) {
-    sleep(rand() % 2);
+    sleep(rand() % 10);
     pthread_mutex_lock(&lock);
     shared_data += 30;
-    printf("Thread 3: Shared data = %d\n", shared_data);
+    printf("Thread %ld: Shared data = %d\n",pthread_self(), shared_data);
     pthread_mutex_unlock(&lock);
-    return NULL;
+    thread_3finish = true;
+    while(true);
 }
 
 int main() {
@@ -48,13 +45,19 @@ int main() {
     }
     
     pthread_create(&threads[0], NULL, thread_func1, NULL);
+    printf("father create thread with ID : %ld\n", (u_int64_t)threads[0]);
     pthread_create(&threads[1], NULL, thread_func2, NULL);
+    printf("father create thread with ID : %ld\n", (u_int64_t)threads[1]);
     pthread_create(&threads[2], NULL, thread_func3, NULL);
+    printf("father create thread with ID : %ld\n", (u_int64_t)threads[2]);
 
-    for (int i = 0; i < 3; i++) {
-        pthread_join(threads[i], NULL);
-    }
+    printf("Create 3 threads\n");
 
+    while(!thread_3finish);
+    pthread_cancel(threads[2]);
+
+    pthread_join(threads[0], NULL);
+    pthread_join(threads[1], NULL);
     printf("Parent thread: Final shared data = %d\n", shared_data);
 
     pthread_mutex_destroy(&lock);
